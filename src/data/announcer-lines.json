@@ -1,0 +1,75 @@
+{
+  "intro": [
+    "Ultimate Smash Stadium is hype!",
+    "Drop the puck, let's get crazy!"
+  ],
+  "go": [
+    "It's smash time! Let's go!",
+    "Full send, baby! Go!",
+    "No brakes on the ice, go!"
+  ],
+  "goal": [
+    "Boom shakalaka! Right in the kisser!",
+    "Cookies on the top shelf, baby!",
+    "Sip that tea! What a snipe!",
+    "Is it the shoes?! Unbelievable goal!"
+  ],
+  "fastGoal": [
+    "Call the fire department, the net is smoking!",
+    "Holy moly! That puck entered orbit!",
+    "Supersonic laser! Goodbye, goalkeeper!"
+  ],
+  "matchPoint": [
+    "Match point! Sweaty palms time!",
+    "One more goal for glory!",
+    "Sudden hype! Finish them now!"
+  ],
+  "win": [
+    "From downtown! Champion crowned!",
+    "Game over, drop the mic!",
+    "Absolute arcade legend right here!"
+  ],
+  "rocketFire": [
+    "Signature Super unleashed! Look out!",
+    "Maximum chaos! Brace for impact!"
+  ],
+  "superFire": {
+    "blaze": "Meteor Fireball! He's on fire!",
+    "volt": "Thunder Bank-Shot! High voltage baby!",
+    "frost": "Sub-Zero Nova! Ice cold justice!",
+    "venom": "Twin Fang Curve! Pure wizardry!"
+  },
+  "bonus": {
+    "MEGA_PADDLE": "Big boy mallet activated!",
+    "SHRINK_FOE": "Honey, I shrunk the rival!",
+    "ICE_WALL": "Brick wall goalie deployed!",
+    "TURBO_SHOT": "Nitro cannon engaged! Hold on!",
+    "FREEZE_FOE": "Ice cube mode on the opponent!",
+    "MULTI_PUCK": "Puck party! Everywhere at once!",
+    "DOUBLE_SCORE": "Double points! Make it rain!",
+    "SIGNATURE_SUPER": "Super charged! Smack that puck!",
+    "ROCKET_PUCK": "Super charged! Smack that puck!"
+  },
+  "habits": {
+    "CAMPER": [
+      "Pitching a tent in the goal crease!",
+      "Playing fortress goalie all day!"
+    ],
+    "AGGRESSIVE": [
+      "No defense, only chaos!",
+      "Living dangerously past midfield!"
+    ],
+    "SNIPER": [
+      "Doing geometry off the side boards!",
+      "Bank shot wizard on the loose!"
+    ],
+    "SMASHER": [
+      "Crushing the puck like a piñata!",
+      "Wait, did the table just shake?!"
+    ],
+    "HOARDER": [
+      "Loot goblin grabbing every mystery box!",
+      "Addicted to shiny power-ups!"
+    ]
+  }
+}

@@ -1,10 +1,12 @@
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls } from "@react-three/drei";
 import { Leva } from "leva";
-import { useControls } from "leva";
 import GlobalStyle from "./GlobalStyle";
 import Experience from "./Experience";
 import Hud from "./Hud";
+
+const isDebug =
+  typeof window !== "undefined" && window.location.hash === "#debug";
 
 const App = () => {
   return (
@@ -22,15 +24,16 @@ const App = () => {
           { name: "leftwardTwo", keys: ["KeyA"] },
           { name: "rightwardTwo", keys: ["KeyD"] },
           { name: "launch", keys: ["Space"] },
+          { name: "bonusTwo", keys: ["KeyE", "ShiftLeft"] },
         ]}>
-        <Leva collapsed />
+        <Leva hidden={!isDebug} collapsed />
         <Canvas
-          shadows
+          dpr={[1, 1.5]}
           camera={{
             fov: 45,
             near: 0.1,
-            far: 100,
-            position: [0, 5, 6],
+            far: 50,
+            position: [0, 6.2, -8],
           }}>
           <Experience />
         </Canvas>

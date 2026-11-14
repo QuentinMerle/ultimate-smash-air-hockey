@@ -1,235 +1,376 @@
-import React, { useState, useRef } from "react";
-import styled, { css, createGlobalStyle } from "styled-components";
+import React, { useState, useRef, useEffect } from "react";
 import { useStore } from "./store";
+import { sound } from "./sound";
+import { getLeaderboard } from "./leaderboard";
+import { trackEvent } from "./telemetry";
+import { isAnyGamepadConnected } from "./gamepad";
+import {
+  createOnlineRoom,
+  joinOnlineRoom,
+  getInviteUrl,
+  getRoomCodeFromUrl,
+  disconnectOnline,
+} from "./net";
+import { FighterSelectGrid } from "./menu/FighterSelectGrid";
+import { StageAndPuckDeck } from "./menu/StageAndPuckDeck";
+import {
+  StartScene,
+  Title,
+  BadgeScript,
+  MainTitle,
+  ControllerBadge,
+  ArcadeCabinet,
+  ModeList,
+  PrimaryModeButton,
+  SecondaryModeButton,
+  OnlineModeButton,
+  LeaderboardBtn,
+  SetupForm,
+  TagRow,
+  FieldGroup,
+  ArcadeInput,
+  ControlsHint,
+  ActionRow,
+  BackBtn,
+  ClashButton,
+  HallDialog,
+  HallCard,
+  LeaderboardTable,
+} from "./menu/StartStyles";
+
+const DIFFICULTY_LABELS = {
+  easy: "CPU (Easy)",
+  medium: "CPU (Normal)",
+  hard: "CPU (Expert)",
+};
+
+function legacyCopyFallback(text) {
+  const field = Object.assign(document.createElement("textarea"), { value: text });
+  field.setAttribute("readonly", "");
+  field.style.cssText = "position:fixed;inset-block-start:0;opacity:0";
+  document.body.append(field);
+  field.select();
+  try {
+    return document.execCommand("copy");
+  } finally {
+    field.remove();
+  }
+}
 
 const Start = () => {
   const inputOne = useRef();
   const inputTwo = useRef();
-  const [start, setStart] = useState(true);
-  const [chooseGame, setChooseGame] = useState(true);
-  const [localGame, setLocalGame] = useState(false);
-  const playerOneName = useStore((state) => state.namePlayerOne);
-  const playerTwoName = useStore((state) => state.namePlayerTwo);
+  const leaderboardDialogRef = useRef(null);
+  const lastCopyStatusRef = useRef("");
 
-  const nextStep = (e) => {
-    e.target.parentNode.classList.add("active");
-    setLocalGame(true);
-    setTimeout(() => {
-      setChooseGame(false);
-      e.target.parentNode.nextSibling.classList.add("active");
-    }, 300);
+  const startGame = useStore((state) => state.startGame);
+  const gameMode = useStore((state) => state.gameMode);
+  const aiDifficulty = useStore((state) => state.aiDifficulty);
+  const winningScore = useStore((state) => state.winningScore);
+  const arena = useStore((state) => state.arena);
+  const playerOneStriker = useStore((state) => state.playerOneStriker);
+  const playerTwoStriker = useStore((state) => state.playerTwoStriker);
+  const puckStyle = useStore((state) => state.puckStyle);
+  const roomCode = useStore((state) => state.roomCode);
+  const onlineRole = useStore((state) => state.onlineRole);
+
+  const setGameMode = useStore((state) => state.setGameMode);
+  const setAiDifficulty = useStore((state) => state.setAiDifficulty);
+  const setWinningScore = useStore((state) => state.setWinningScore);
+  const setArena = useStore((state) => state.setArena);
+  const setPlayerOneStriker = useStore((state) => state.setPlayerOneStriker);
+  const setPlayerTwoStriker = useStore((state) => state.setPlayerTwoStriker);
+  const setPuckStyle = useStore((state) => state.setPuckStyle);
+  const setPlayerOneName = useStore((state) => state.namePlayerOne);
+  const setPlayerTwoName = useStore((state) => state.namePlayerTwo);
+  const launchGame = useStore((state) => state.launchGame);
+
+  const [step, setStep] = useState("mode");
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboardRows, setLeaderboardRows] = useState([]);
+  const [copyStatus, setCopyStatus] = useState("");
+  const [joinCodeValue, setJoinCodeValue] = useState("");
+  const [gamepadReady, setGamepadReady] = useState(false);
+
+  useEffect(() => {
+    const invitedCode = getRoomCodeFromUrl();
+    if (invitedCode) {
+      setGameMode("online");
+      setJoinCodeValue(invitedCode);
+      setStep("setup");
+    }
+
+    const checkPads = () => setGamepadReady(isAnyGamepadConnected());
+    checkPads();
+    window.addEventListener("gamepadconnected", checkPads);
+    window.addEventListener("gamepaddisconnected", checkPads);
+    return () => {
+      window.removeEventListener("gamepadconnected", checkPads);
+      window.removeEventListener("gamepaddisconnected", checkPads);
+    };
+  }, [setGameMode]);
+
+  useEffect(() => {
+    const dialog = leaderboardDialogRef.current;
+    if (!dialog) return;
+    if (showLeaderboard && !dialog.open) {
+      setLeaderboardRows(getLeaderboard());
+      dialog.showModal();
+    } else if (!showLeaderboard && dialog.open) {
+      dialog.close();
+    }
+  }, [showLeaderboard]);
+
+  if (startGame) return null;
+
+  const chooseMode = (mode) => {
+    sound.playUiClick();
+    disconnectOnline();
+    setGameMode(mode);
+    setStep("setup");
   };
 
-  const handleClick = () => {
-    const nameOne = inputOne.current.value || "Player 1";
-    const nameTwo = inputTwo.current.value || "Player 2";
-    setStart(false);
-    playerOneName(nameOne);
-    playerTwoName(nameTwo);
+  const handleCopyInvite = async () => {
+    const url = getInviteUrl(roomCode);
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    } catch {
+      ok = legacyCopyFallback(url);
+    }
+    if (ok) {
+      trackEvent("invite_copied", { mode: "online" });
+    }
+    let msg = ok ? "Copied" : "Copy failed";
+    if (msg === lastCopyStatusRef.current) {
+      msg += "\u00A0";
+    }
+    lastCopyStatusRef.current = msg;
+    setCopyStatus(msg);
+    sound.playUiClick();
   };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    sound.playUiClick();
+    const nameOne = inputOne.current?.value?.trim() || "Player 1";
+
+    trackEvent("match_start", {
+      mode: gameMode,
+      striker: playerOneStriker,
+      arena,
+      difficulty: aiDifficulty,
+      winningScore,
+    });
+
+    if (gameMode === "online") {
+      if (joinCodeValue.trim()) {
+        joinOnlineRoom(joinCodeValue.trim(), nameOne, playerOneStriker);
+      } else {
+        createOnlineRoom(nameOne, playerOneStriker);
+      }
+      return;
+    }
+
+    const nameTwo =
+      gameMode === "ai"
+        ? DIFFICULTY_LABELS[aiDifficulty]
+        : inputTwo.current?.value?.trim() || "Player 2";
+
+    setPlayerOneName(nameOne);
+    setPlayerTwoName(nameTwo);
+    launchGame();
+  };
+
+  const isSetup = step === "setup";
 
   return (
-    <>
-      {start && (
-        <StartScene>
-          <Title>
-            <HandScript>r3f</HandScript>
-            <GradientScript>Air Hockey</GradientScript>
-          </Title>
-          <BoxContainer>
-            {chooseGame && (
-              <Cards>
-                <Card onClick={nextStep}>Local</Card>
-                <Card disabled>Online Soon</Card>
-              </Cards>
-            )}
-            {localGame && (
-              <LocalGame>
-                <Form onSubmit={handleClick}>
-                  <Inputs>
-                    <label>
-                      Player 1 name :
-                      <Input
-                        ref={inputOne}
-                        type="text"
-                        name="name"
-                        maxLength="14"
-                      />
-                    </label>
-                    <label>
-                      Player 2 name :
-                      <Input
-                        ref={inputTwo}
-                        type="text"
-                        name="name"
-                        maxLength="14"
-                      />
-                    </label>
-                  </Inputs>
-                  <Button type="submit">Go!</Button>
-                </Form>
-              </LocalGame>
-            )}
-          </BoxContainer>
-        </StartScene>
-      )}
-    </>
+    <StartScene as="main" $compact={isSetup}>
+      <Title $compact={isSetup}>
+        <BadgeScript $compact={isSetup}>ULTIMATE SMASH</BadgeScript>
+        <MainTitle $compact={isSetup}>AIR HOCKEY</MainTitle>
+        {!isSetup && gamepadReady && (
+          <ControllerBadge>🎮 GAMEPAD CONNECTED</ControllerBadge>
+        )}
+      </Title>
+
+      <ArcadeCabinet>
+        {step === "mode" && (
+          <ModeList>
+            <PrimaryModeButton
+              type="button"
+              onMouseEnter={() => sound.playUiHover()}
+              onClick={() => chooseMode("ai")}>
+              🤖 1P ARCADE VS CPU
+            </PrimaryModeButton>
+            <SecondaryModeButton
+              type="button"
+              onMouseEnter={() => sound.playUiHover()}
+              onClick={() => chooseMode("local")}>
+              🎮 2P VERSUS (SIDE VIEW)
+            </SecondaryModeButton>
+            <OnlineModeButton
+              type="button"
+              onMouseEnter={() => sound.playUiHover()}
+              onClick={() => chooseMode("online")}>
+              🌐 ONLINE P2P ARENA
+            </OnlineModeButton>
+            <LeaderboardBtn
+              type="button"
+              onMouseEnter={() => sound.playUiHover()}
+              onClick={() => {
+                sound.playUiClick();
+                setShowLeaderboard(true);
+              }}>
+              🏆 HALL OF FAME (LEADERBOARD)
+            </LeaderboardBtn>
+          </ModeList>
+        )}
+
+        {step === "setup" && (
+          <SetupForm onSubmit={handleSubmit}>
+            <TagRow>
+              <FieldGroup>
+                <label htmlFor="p1-name-input">
+                  {gameMode === "online" ? "Your Fighter Tag" : "Player 1 Tag"}
+                </label>
+                <ArcadeInput
+                  id="p1-name-input"
+                  ref={inputOne}
+                  type="text"
+                  defaultValue="Player 1"
+                  maxLength="14"
+                />
+              </FieldGroup>
+
+              {gameMode === "local" && (
+                <FieldGroup>
+                  <label htmlFor="p2-name-input">Player 2 Tag</label>
+                  <ArcadeInput
+                    id="p2-name-input"
+                    ref={inputTwo}
+                    type="text"
+                    defaultValue="Player 2"
+                    maxLength="14"
+                  />
+                </FieldGroup>
+              )}
+            </TagRow>
+
+            <FighterSelectGrid
+              gameMode={gameMode}
+              playerOneStriker={playerOneStriker}
+              playerTwoStriker={playerTwoStriker}
+              onSelectP1={setPlayerOneStriker}
+              onSelectP2={setPlayerTwoStriker}
+            />
+
+            <StageAndPuckDeck
+              gameMode={gameMode}
+              arena={arena}
+              puckStyle={puckStyle}
+              aiDifficulty={aiDifficulty}
+              winningScore={winningScore}
+              roomCode={roomCode}
+              onlineRole={onlineRole}
+              joinCodeValue={joinCodeValue}
+              copyStatus={copyStatus}
+              onSelectArena={setArena}
+              onSelectPuck={setPuckStyle}
+              onSelectDifficulty={setAiDifficulty}
+              onSelectWinningScore={setWinningScore}
+              onChangeJoinCode={setJoinCodeValue}
+              onCopyInvite={handleCopyInvite}
+            />
+
+            <ControlsHint>
+              {gameMode === "local" ? (
+                <>
+                  <div>🖱️ <b>P1 (Left)</b>: Mouse / Arrows / Pad 1 — Space/Click triggers Item & Super</div>
+                  <div>⌨️ <b>P2 (Right)</b>: W A S D / Pad 2 — Shift / E triggers Item & Super</div>
+                </>
+              ) : (
+                <>
+                  <div>🖱️ <b>Move</b>: Mouse, Thumb Drag (Touch), Arrow Keys, or Gamepad Stick</div>
+                  <div>⚡ <b>Item / Signature Super</b>: Left Click, Double-Tap (Touch), Space, or Pad A</div>
+                </>
+              )}
+            </ControlsHint>
+
+            <ActionRow>
+              <BackBtn
+                type="button"
+                data-gamepad-back="true"
+                onClick={() => {
+                  sound.playUiBack();
+                  disconnectOnline();
+                  setJoinCodeValue("");
+                  setStep("mode");
+                }}>
+                ← BACK
+              </BackBtn>
+              <ClashButton type="submit">
+                {gameMode === "online"
+                  ? joinCodeValue.trim()
+                    ? "JOIN ARENA!"
+                    : roomCode
+                    ? "WAITING..."
+                    : "CREATE INVITE ROOM!"
+                  : "⚡ SMASH IT!"}
+              </ClashButton>
+            </ActionRow>
+          </SetupForm>
+        )}
+      </ArcadeCabinet>
+
+      <HallDialog
+        ref={leaderboardDialogRef}
+        aria-labelledby="hall-dialog-title"
+        onCancel={(e) => {
+          e.preventDefault();
+          setShowLeaderboard(false);
+        }}>
+        <HallCard>
+          <h2 id="hall-dialog-title">🏆 HALL OF FAME</h2>
+          <LeaderboardTable>
+            <caption>Top Arcade Scores & Radar Speeds</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Player</th>
+                <th scope="col">Style</th>
+                <th scope="col">KM/H</th>
+                <th scope="col">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboardRows.slice(0, 7).map((row, idx) => (
+                <tr key={row.id}>
+                  <td>{idx + 1}</td>
+                  <td>{row.name}</td>
+                  <td>{row.archetype}</td>
+                  <td>{row.topSpeed}</td>
+                  <td>
+                    <b>{row.score}</b>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </LeaderboardTable>
+          <ClashButton
+            type="button"
+            autoFocus
+            onClick={() => {
+              sound.playUiBack();
+              setShowLeaderboard(false);
+            }}>
+            CLOSE
+          </ClashButton>
+        </HallCard>
+      </HallDialog>
+    </StartScene>
   );
 };
 
 export default Start;
-
-const font = css`
-  font-family: "RussoOne";
-`;
-
-const StartScene = styled.div`
-  ${font}
-  position: fixed;
-  z-index: 99;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background-color: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(4px);
-  @media only screen and (max-width: 900px) {
-    font-size: 1.5em;
-  }
-`;
-
-const Title = styled.div`
-  font-size: 5rem;
-  font-style: italic;
-  font-weight: 900;
-  line-height: 1.2em;
-  text-transform: uppercase;
-`;
-
-const HandScript = styled.span`
-  font-family: "Caveat", cursive;
-  color: blue;
-`;
-
-const GradientScript = styled.div`
-  padding: 0 2rem;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 1) 0%,
-    rgba(180, 9, 9, 1) 35%,
-    rgba(150, 0, 0, 1) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-`;
-
-const BoxContainer = styled.div`
-  width: 392px;
-  height: 392px;
-  margin-top: 40px;
-  overflow: hidden;
-`;
-
-const Cards = styled.div`
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s ease, opacity 0.4s ease;
-
-  &.active {
-    transform: translateX(-50%);
-    opacity: 0;
-  }
-`;
-
-const Card = styled.button`
-  ${font}
-  border: 0;
-  padding: 10px 0;
-  font-size: 1.8rem;
-  color: #000000;
-  background: none;
-  outline: none;
-
-  &:not([disabled]) {
-    cursor: pointer;
-  }
-
-  &[disabled] {
-    opacity: 0.6;
-  }
-
-  &:hover {
-    color: blue;
-  }
-`;
-
-const LocalGame = styled.div`
-  height: 200px;
-  opacity: 0;
-  transform: translateX(50%);
-  transition: transform 0.3s ease, opacity 0.4s ease;
-
-  &.active {
-    opacity: 1;
-    transform: translateX(0);
-  }
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-
-  label {
-    width: 45%;
-  }
-`;
-
-const Inputs = styled.div`
-  display: flex;
-  justify-content: space-between;
-`;
-
-const Input = styled.input`
-  ${font}
-  display: block;
-  width: 100%;
-  border: none;
-  border-bottom: 2px solid #000000;
-  font-size: 1.2rem;
-  color: #000000;
-  background: transparent;
-
-  &:focus {
-    outline: none;
-  }
-`;
-
-const Button = styled.button`
-  ${font}
-  width: 30%;
-  margin: 40px auto 0;
-  border: 4px solid transparent;
-  border-radius: 10px;
-  padding: 0.2rem 0.8rem;
-  font-size: 2.5rem;
-  color: #ffffff;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 1) 0%,
-    rgba(180, 9, 9, 1) 35%,
-    rgba(150, 0, 0, 1) 100%
-  );
-  apppearance: none;
-  cursor: pointer;
-
-  &:hover {
-    border: 4px solid red;
-    color: red;
-    background: #ffffff;
-  }
-`;

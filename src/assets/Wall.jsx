@@ -1,13 +1,19 @@
 import React from "react";
-import { RigidBody } from "@react-three/rapier";
+import { toonGradientMap, outlineMaterial } from "./Effects";
 
 const Wall = ({ nodes }) => {
   return (
-    <RigidBody type="fixed" colliders="trimesh" restitution={0.2} friction={0}>
-      <mesh geometry={nodes.geometry} position={[0.02, 0, 0]}>
-        <meshBasicMaterial color={"#ffffff"} />
+    <group position={[0.02, 0, 0]}>
+      <mesh geometry={nodes.geometry}>
+        <meshToonMaterial color={"#ffffff"} gradientMap={toonGradientMap} />
       </mesh>
-    </RigidBody>
+      {/* Crisp outer cartoon ink outline on the rink walls */}
+      <mesh
+        geometry={nodes.geometry}
+        scale={[1.022, 1.08, 1.016]}
+        material={outlineMaterial}
+      />
+    </group>
   );
 };
 
