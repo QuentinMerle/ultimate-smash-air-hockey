@@ -2,6 +2,9 @@
 
 3D arcade Air Hockey game with **Mario Kart-style items**, **4 Fighters with Signature Supers**, **Sakurai-style Goal KO Slow-Mo**, **Organic spring-billowing goal nets**, **3 reactive 3D arenas (NHL goal sirens, Tesla coils, Stargate portals)**, **Arcade Voice Caster & Habit Profiler**, **Thumb-drag mobile touch + W3C Gamepad support**, and **serverless P2P Online multiplayer via PeerJS** — built with **React Three Fiber (Three.js)**, an analytical **2D physics engine (`physics2d.js`)**, and **Zustand**.
 
+> **🧪 Revival Experiment (Gemini Argon & Hydrogen)**  
+> Originally started as an older React Three Fiber prototype sitting in a local folder, this project was revived as a hands-on experiment with **Gemini (Argon & Hydrogen)** — testing how agentic pair-programming can take an unfinished 3D prototype across the "last 80% polish wall" (custom 8-substep 2D physics, Sakurai-style KO slow-mo, procedural Web Audio synthesis, goal-reactive arenas, and serverless PeerJS WebRTC multiplayer).
+
 ---
 
 ## 🚀 Getting Started
@@ -81,17 +84,6 @@ src/
   - **Starlight Nebula**: Stargate Nova portals behind each goal ignite an energy pillar & accelerate orbital rings.
 - **Sakurai Goal Slow-Mo & Delayed Outcome**: Every goal triggers `115 ms` hit-stop + `0.16x` slow-mo + organic net ripple + pop/shake `GOAL!` banner. Match-winning goals display a dedicated `VICTORY!` / `DEFEAT!` splash for `1.65s` before presenting the summary card.
 - **Serverless Online P2P (`net.js`)**: Uses **PeerJS WebRTC** (`?room=XXXX` invites) + **BroadcastChannel** (local multi-tab `0ms`) with zero backend required for static hosting (Vercel, Netlify, Cloudflare Pages). Adding a free TURN relay in `net.js` enables strict symmetric 4G/5G cellular NAT traversal.
-
----
-
-## 📁 Renaming Repo / Local Folder
-
-After renaming the GitHub repository (`Settings -> Rename`) from `r3f-air-hockey` to `ultimate-smash-air-hockey`, run outside your active IDE session:
-
-```bash
-git remote set-url origin https://github.com/QuentinMerle/ultimate-smash-air-hockey.git
-cd .. && mv r3f-air-hockey ultimate-smash-air-hockey
-```
 
 ---
 
