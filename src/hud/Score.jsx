@@ -18,6 +18,7 @@ export function Score() {
   const endGame = useStore((state) => state.endGame);
   const gameMode = useStore((state) => state.gameMode);
   const isPaused = useStore((state) => state.isPaused);
+  const peerDisconnected = useStore((state) => state.peerDisconnected);
   const isGoalSlowMo = useStore((state) => state.isGoalSlowMo);
   const lastGoalSpeed = useStore((state) => state.lastGoalSpeed);
   const casterMessage = useStore((state) => state.casterMessage);
@@ -154,28 +155,44 @@ export function Score() {
         aria-labelledby="pause-modal-title"
         onCancel={(e) => {
           e.preventDefault();
-          togglePause();
+          if (peerDisconnected) {
+            handleExitToMenu();
+          } else {
+            togglePause();
+          }
         }}>
         <PauseCard>
-          <PauseHeading id="pause-modal-title">⏸️ MATCH PAUSED</PauseHeading>
+          <PauseHeading id="pause-modal-title">
+            {peerDisconnected ? "⚠️ OPPONENT LEFT" : "⏸️ MATCH PAUSED"}
+          </PauseHeading>
           <PauseSub>
-            {namePlayerOne} {scorePlayerOne} — {scorePlayerTwo} {namePlayerTwo}
+            {peerDisconnected
+              ? `Your rival disconnected from the P2P room (${namePlayerOne} ${scorePlayerOne} — ${scorePlayerTwo} ${namePlayerTwo}).`
+              : `${namePlayerOne} ${scorePlayerOne} — ${scorePlayerTwo} ${namePlayerTwo}`}
           </PauseSub>
           <PauseActions>
-            <ResumeBtn type="button" autoFocus onClick={togglePause}>
-              ▶ Resume Match
-            </ResumeBtn>
-            <SecondaryDialogBtn
-              type="button"
-              onClick={() => {
-                sound.playUiClick();
-                launchGame();
-              }}>
-              ↻ Restart Match
-            </SecondaryDialogBtn>
-            <SecondaryDialogBtn type="button" onClick={handleExitToMenu}>
-              ⚙️ Quit to Main Menu
-            </SecondaryDialogBtn>
+            {peerDisconnected ? (
+              <ResumeBtn type="button" autoFocus onClick={handleExitToMenu}>
+                ⚙️ Back to Main Menu
+              </ResumeBtn>
+            ) : (
+              <>
+                <ResumeBtn type="button" autoFocus onClick={togglePause}>
+                  ▶ Resume Match
+                </ResumeBtn>
+                <SecondaryDialogBtn
+                  type="button"
+                  onClick={() => {
+                    sound.playUiClick();
+                    launchGame();
+                  }}>
+                  ↻ Restart Match
+                </SecondaryDialogBtn>
+                <SecondaryDialogBtn type="button" onClick={handleExitToMenu}>
+                  ⚙️ Quit to Main Menu
+                </SecondaryDialogBtn>
+              </>
+            )}
           </PauseActions>
         </PauseCard>
       </PauseDialog>

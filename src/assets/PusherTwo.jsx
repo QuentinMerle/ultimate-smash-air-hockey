@@ -172,6 +172,28 @@ const PusherTwo = ({ nodes, positionPusher }) => {
 
     currentVec.current.set(body.x, PUSHER_Y, body.z);
 
+    if (gameRefs.autoPilotP2?.active) {
+      const clampedX = Math.max(-maxX, Math.min(maxX, gameRefs.autoPilotP2.x));
+      const clampedZ = Math.max(minZ, Math.min(maxZ, gameRefs.autoPilotP2.z));
+      targetVec.current.set(clampedX, PUSHER_Y, clampedZ);
+      currentVec.current.lerp(targetVec.current, Math.min(1, 18 * delta));
+      body.setNextKinematicTranslation({
+        x: currentVec.current.x,
+        y: PUSHER_Y,
+        z: currentVec.current.z,
+      });
+      if (groupRef.current) {
+        groupRef.current.position.set(
+          currentVec.current.x,
+          PUSHER_Y,
+          currentVec.current.z
+        );
+      }
+      gameRefs.p2Pos.x = currentVec.current.x;
+      gameRefs.p2Pos.z = currentVec.current.z;
+      return;
+    }
+
     // 1. ONLINE MODE
     if (store.gameMode === "online") {
       if (store.onlineRole === "guest") {

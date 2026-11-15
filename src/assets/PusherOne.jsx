@@ -279,7 +279,10 @@ const PusherOne = ({ nodes, positionPusher }) => {
     let desiredX = body.x;
     let desiredZ = body.z;
 
-    if (gpMoveActive) {
+    if (gameRefs.autoPilotP1?.active) {
+      desiredX = gameRefs.autoPilotP1.x;
+      desiredZ = gameRefs.autoPilotP1.z;
+    } else if (gpMoveActive) {
       const padSpeed = 9.5 * playerOneSpeedMult * delta;
       desiredX = body.x + gp.dx * padSpeed;
       desiredZ = body.z + gp.dz * padSpeed;
@@ -339,6 +342,8 @@ const PusherOne = ({ nodes, positionPusher }) => {
     const lerpFactor =
       gpMoveActive || arrowActive
         ? 1
+        : gameRefs.autoPilotP1?.active
+        ? Math.min(1, 20 * delta)
         : isTouchRef.current
         ? Math.min(1, 26 * playerOneSpeedMult * delta)
         : Math.min(1, 18 * playerOneSpeedMult * delta);

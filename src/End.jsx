@@ -176,7 +176,7 @@ const End = () => {
                 {summary?.leaderboard && (
                   <MiniTable>
                     <caption>
-                      HALL OF FAME{" "}
+                      LOCAL HALL OF FAME{" "}
                       {summary.rank > 0 ? `(YOU RANKED #${summary.rank})` : ""}
                     </caption>
                     <thead>

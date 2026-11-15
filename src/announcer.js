@@ -14,6 +14,14 @@ class VoiceAnnouncer {
     this.lastSpokenAt = 0;
     this.isSpeaking = false;
     this.speakTimer = null;
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      this.resolveEnglishVoice();
+      window.speechSynthesis.addEventListener?.("voiceschanged", () => {
+        this.cachedVoice = null;
+        this.resolveEnglishVoice();
+      });
+    }
   }
 
   resolveEnglishVoice() {
@@ -31,6 +39,9 @@ class VoiceAnnouncer {
       "Whisper",
       "Zarvox",
       "Trinoids",
+      "Google US English",
+      "Google UK English Female",
+      "Female",
       "Samantha",
       "Victoria",
       "Karen",
@@ -45,25 +56,39 @@ class VoiceAnnouncer {
       "Flo",
       "Sandy",
       "Shelley",
+      "Nicky",
+      "Kathy",
+      "Serena",
+      "Kate",
+      "Martha",
+      "Catherine",
+      "Princess",
+      "Junior",
     ];
-    const cleanVoices = voices.filter(
+    const englishVoices = voices.filter((v) =>
+      v.lang?.toLowerCase().startsWith("en")
+    );
+    const enPool = englishVoices.length > 0 ? englishVoices : voices;
+    const cleanVoices = enPool.filter(
       (v) => !banned.some((b) => v.name.includes(b))
     );
-    const pool = cleanVoices.length > 0 ? cleanVoices : voices;
+    const pool = cleanVoices.length > 0 ? cleanVoices : enPool;
 
     const preferredNames = [
-      "Google US English",
-      "Evan",
-      "Aaron",
-      "Nathan",
-      "Reed",
-      "Rocko",
-      "Microsoft Mark",
-      "Microsoft Guy",
-      "Alex",
+      "Google UK English Male",
       "Daniel",
+      "Alex",
+      "Aaron",
+      "Evan",
+      "Nathan",
       "Tom",
       "Oliver",
+      "Lee",
+      "Eddy",
+      "Reed",
+      "Rocko",
+      "Microsoft Guy",
+      "Microsoft Mark",
       "Microsoft David",
     ];
     for (const name of preferredNames) {
@@ -74,8 +99,7 @@ class VoiceAnnouncer {
       }
     }
 
-    const enVoice = pool.find((v) => v.lang && v.lang.startsWith("en"));
-    this.cachedVoice = enVoice || pool[0];
+    this.cachedVoice = pool[0] || enPool[0];
     return this.cachedVoice;
   }
 
@@ -120,9 +144,9 @@ class VoiceAnnouncer {
         const voice = this.resolveEnglishVoice();
         const utter = new SpeechSynthesisUtterance(text);
         if (voice) utter.voice = voice;
-        utter.lang = "en-US";
-        utter.pitch = 1.18;
-        utter.rate = 1.2;
+        utter.lang = voice?.lang || "en-GB";
+        utter.pitch = 0.95;
+        utter.rate = 1.16;
         utter.volume = 0.92;
         utter.onstart = () => {
           this.isSpeaking = true;

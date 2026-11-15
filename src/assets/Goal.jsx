@@ -62,6 +62,8 @@ const Goal = ({ nodes, name, position, net, collider, rotationy }) => {
   const goalTextRef = useRef(null);
   const textPopRef = useRef(0);
 
+  const startGame = useStore((state) => state.startGame);
+  const isGoalSlowMo = useStore((state) => state.isGoalSlowMo);
   const gameMode = useStore((state) => state.gameMode);
   const onlineRole = useStore((state) => state.onlineRole);
   const addScore = useStore((state) => state.increaseScore);
@@ -124,6 +126,12 @@ const Goal = ({ nodes, name, position, net, collider, rotationy }) => {
       netGeo.dispose();
     };
   }, [netTexture, netGeo]);
+
+  useEffect(() => {
+    if (!isGoalSlowMo || !startGame) {
+      setIntersection(false);
+    }
+  }, [isGoalSlowMo, startGame]);
 
   // Spring-damped organic nylon net deformation + subtle idle air-cushion ripple
   useFrame((_, delta) => {
@@ -260,7 +268,7 @@ const Goal = ({ nodes, name, position, net, collider, rotationy }) => {
       </group>
       <Text
         ref={goalTextRef}
-        visible={intersecting}
+        visible={intersecting && isGoalSlowMo && startGame}
         color={celebrationColor}
         outlineWidth={0.09}
         outlineColor="#0f172a"

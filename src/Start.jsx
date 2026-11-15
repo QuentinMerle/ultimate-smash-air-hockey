@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useStore } from "./store";
+import { useStore, gameRefs } from "./store";
 import { sound } from "./sound";
 import { getLeaderboard } from "./leaderboard";
 import { trackEvent } from "./telemetry";
@@ -85,7 +85,7 @@ const Start = () => {
   const setPlayerTwoName = useStore((state) => state.namePlayerTwo);
   const launchGame = useStore((state) => state.launchGame);
 
-  const [step, setStep] = useState("mode");
+  const [step, setStep] = useState(() => (gameRefs.forceSetupStep ? "setup" : "mode"));
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboardRows, setLeaderboardRows] = useState([]);
   const [copyStatus, setCopyStatus] = useState("");
@@ -120,6 +120,12 @@ const Start = () => {
       dialog.close();
     }
   }, [showLeaderboard]);
+
+  useEffect(() => {
+    if (!startGame && gameRefs.forceSetupStep) {
+      setStep("setup");
+    }
+  }, [startGame]);
 
   if (startGame) return null;
 
@@ -223,7 +229,7 @@ const Start = () => {
                 sound.playUiClick();
                 setShowLeaderboard(true);
               }}>
-              🏆 HALL OF FAME (LEADERBOARD)
+              🏆 LEADERBOARD (LOCAL)
             </LeaderboardBtn>
           </ModeList>
         )}
@@ -334,7 +340,7 @@ const Start = () => {
         <HallCard>
           <h2 id="hall-dialog-title">🏆 HALL OF FAME</h2>
           <LeaderboardTable>
-            <caption>Top Arcade Scores & Radar Speeds</caption>
+            <caption>Top Arcade Scores & Radar Speeds (Local Browser Storage)</caption>
             <thead>
               <tr>
                 <th scope="col">#</th>

@@ -19,6 +19,9 @@ export const gameRefs = {
   p2Pos: { x: 0, z: 2.1 },
   p1Pulse: 0,
   p2Pulse: 0,
+  autoPilotP1: { active: false, x: 0, z: -2.1 },
+  autoPilotP2: { active: false, x: 0, z: 2.1 },
+  forceSetupStep: false,
 };
 
 // Pause-aware timeout scheduler
@@ -99,6 +102,7 @@ const initialModifiers = {
   activeEffects: [],
   countdown: null, // null | 3 | 2 | 1 | "GO!"
   isPaused: false,
+  peerDisconnected: false,
   isGoalSlowMo: false,
 };
 

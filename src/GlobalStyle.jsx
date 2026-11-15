@@ -35,6 +35,11 @@ const GlobalStyle = createGlobalStyle`
     touch-action: none;
   }
 
+  html.trailer-recording,
+  html.trailer-recording * {
+    cursor: none !important;
+  }
+
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 3px solid #fde047;
     outline-offset: 3px;

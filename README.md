@@ -2,6 +2,8 @@
 
 3D arcade Air Hockey game with **Mario Kart-style items**, **4 Fighters with Signature Supers**, **Sakurai-style Goal KO Slow-Mo**, **Organic spring-billowing goal nets**, **3 reactive 3D arenas (NHL goal sirens, Tesla coils, Stargate portals)**, **Arcade Voice Caster & Habit Profiler**, **Thumb-drag mobile touch + W3C Gamepad support**, and **serverless P2P Online multiplayer via PeerJS** — built with **React Three Fiber (Three.js)**, an analytical **2D physics engine (`physics2d.js`)**, and **Zustand**.
 
+🎮 **Play Live:** [https://ultimate-smash-air-hockey.vercel.app/](https://ultimate-smash-air-hockey.vercel.app/)
+
 > **🧪 Revival Experiment (Gemini Argon & Hydrogen)**  
 > Originally started as an older React Three Fiber prototype sitting in a local folder, this project was revived as a hands-on experiment with **Gemini (Argon & Hydrogen)** — testing how agentic pair-programming can take an unfinished 3D prototype across the "last 80% polish wall" (custom 8-substep 2D physics, Sakurai-style KO slow-mo, procedural Web Audio synthesis, goal-reactive arenas, and serverless PeerJS WebRTC multiplayer).
 

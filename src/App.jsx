@@ -4,11 +4,14 @@ import { Leva } from "leva";
 import GlobalStyle from "./GlobalStyle";
 import Experience from "./Experience";
 import Hud from "./Hud";
+import { useTrailerDirector } from "./trailer";
 
 const isDebug =
   typeof window !== "undefined" && window.location.hash === "#debug";
 
 const App = () => {
+  useTrailerDirector();
+
   return (
     <>
       <GlobalStyle />

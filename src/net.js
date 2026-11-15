@@ -4,7 +4,8 @@
 // 1) BroadcastChannel (0ms same-device / multi-tab instant connection)
 // 2) WebRTC DataChannel via dynamic PeerJS CDN import (free cross-device internet P2P on Vercel/static hosts)
 
-import { useStore } from "./store";
+import { useStore, pauseAllGameTimeouts } from "./store";
+import { sound } from "./sound";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -62,9 +63,50 @@ function sendPacket(payload) {
   }
 }
 
+function handleRemotePeerLeft() {
+  const wasConnected = netState.connected;
+  netState.connected = false;
+  const store = useStore.getState();
+  if (store.onlineConnected) {
+    store.setOnlineState({ onlineConnected: false });
+  }
+
+  if (
+    wasConnected &&
+    store.gameMode === "online" &&
+    store.startGame &&
+    !store.endGame &&
+    !store.peerDisconnected
+  ) {
+    pauseAllGameTimeouts();
+    sound.setMusicPaused(true);
+    sound.playPause();
+    useStore.setState({
+      isPaused: true,
+      peerDisconnected: true,
+      casterMessage: "⚠️ OPPONENT DISCONNECTED FROM THE ARENA!",
+    });
+  }
+}
+
+/** Bind WebRTC DataChannel packet and disconnect listeners cleanly once per connection. */
+function attachPeerLifecycle(conn) {
+  conn.on("data", handleIncomingPacket);
+  const onDrop = () => {
+    if (netState.conn === conn) handleRemotePeerLeft();
+  };
+  conn.on("close", onDrop);
+  conn.on("error", onDrop);
+}
+
 function handleIncomingPacket(msg) {
   if (!msg || typeof msg !== "object") return;
   const store = useStore.getState();
+
+  if (msg.type === "bye") {
+    handleRemotePeerLeft();
+    return;
+  }
 
   if (msg.type === "hello" && netState.role === "host") {
     netState.connected = true;
@@ -168,11 +210,7 @@ export async function createOnlineRoom(hostName, strikerId) {
       netState.peer = peer;
       peer.on("connection", (conn) => {
         netState.conn = conn;
-        conn.on("data", handleIncomingPacket);
-        conn.on("close", () => {
-          netState.connected = false;
-          useStore.getState().setOnlineState({ onlineConnected: false });
-        });
+        attachPeerLifecycle(conn);
       });
     } catch {
       // BroadcastChannel stays active if PeerJS signaling is unreachable
@@ -229,11 +267,7 @@ export async function joinOnlineRoom(roomCode, guestName, strikerId) {
             striker: netState.localStriker,
           });
         });
-        conn.on("data", handleIncomingPacket);
-        conn.on("close", () => {
-          netState.connected = false;
-          useStore.getState().setOnlineState({ onlineConnected: false });
-        });
+        attachPeerLifecycle(conn);
       });
     } catch {
       // BroadcastChannel remains active
@@ -260,6 +294,10 @@ export function sendGuestInput(x, z, bonusRequested = false) {
 }
 
 export function disconnectOnline() {
+  if (netState.connected) {
+    sendPacket({ type: "bye" });
+    netState.connected = false;
+  }
   if (netState.channel) {
     netState.channel.close();
     netState.channel = null;
@@ -285,4 +323,14 @@ export function disconnectOnline() {
     roomCode: "",
     onlineConnected: false,
   });
+}
+
+if (typeof window !== "undefined") {
+  const notifyPeerLeave = () => {
+    if (netState.connected) {
+      sendPacket({ type: "bye" });
+    }
+  };
+  window.addEventListener("pagehide", notifyPeerLeave);
+  window.addEventListener("beforeunload", notifyPeerLeave);
 }
