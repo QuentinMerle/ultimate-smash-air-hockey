@@ -34,7 +34,17 @@ export function generateRoomCode() {
 
 export function getInviteUrl(code) {
   if (typeof window === "undefined") return "";
-  const url = new URL(window.location.href);
+  let inIframe = false;
+  try {
+    inIframe = window.self !== window.top;
+  } catch {
+    inIframe = true;
+  }
+  const url = new URL(
+    inIframe
+      ? "https://ultimate-smash-air-hockey.vercel.app/"
+      : window.location.href
+  );
   url.searchParams.set("room", code);
   return url.toString();
 }
