@@ -46,7 +46,7 @@ function CartoonIceWall({ positionZ }) {
 }
 
 export function AirHockey(props) {
-  const { nodes, materials } = useGLTF("/air-hockey.glb");
+  const { nodes, materials } = useGLTF("./air-hockey.glb");
   const startGame = useStore((state) => state.startGame);
   const countdown = useStore((state) => state.countdown);
   const extraPucks = useStore((state) => state.extraPucks);
@@ -266,4 +266,4 @@ export function AirHockey(props) {
   );
 }
 
-useGLTF.preload("/air-hockey.glb");
+useGLTF.preload("./air-hockey.glb");
